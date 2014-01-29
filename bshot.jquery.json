@@ -1,0 +1,27 @@
+{
+  "name": "bshot",
+  "title": "BShot",
+  "description": "A jQuery plugin for taking browser snapshots.",
+  "version": "0.1.0",
+  "homepage": "",
+  "author": {
+    "name": "Roland Zsámboki",
+    "email": "zsamboki.roland@gmail.com",
+    "url": "http://sectorbros.hu"
+  },
+  "repository": {
+    "type": "git",
+    "url": "none"
+  },
+  "bugs": "",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "/blob/master/LICENSE-MIT"
+    }
+  ],
+  "dependencies": {
+    "jquery": "*"
+  },
+  "keywords": []
+}

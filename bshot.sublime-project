@@ -1,0 +1,21 @@
+{
+	"folders":
+	[
+		{
+			"path": "src",
+			"folder_exclude_patterns": ["backup"]
+		}
+	],
+	"settings":
+	{
+		"tab_size": 4,
+		"translate_tabs_to_spaces": false
+	},
+	"build_systems":
+	[
+		{
+			"name": "BShot Project",
+			"cmd": ["grunt.cmd", "debug", "--no-color"]
+		}
+	]
+}

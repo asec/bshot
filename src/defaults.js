@@ -1,0 +1,5 @@
+$.fn.bShot.defaults = {
+
+
+
+};
