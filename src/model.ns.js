@@ -6,4 +6,5 @@
 //@import "model/rendertree/nodes/RenderText.js"
 //@import "model/rendertree/nodes/RenderAnonymousBlock.js"
 //@import "model/rendertree/nodes/RenderReplaced.js"
+//@import "model/rendertree/nodes/RenderLineBox.js"
 //@import "model/rendertree/nodes/tags/Img.js"

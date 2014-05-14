@@ -1,4 +1,4 @@
-/*! BShot - v0.1.0 - 2014-01-29
+/*! BShot - v0.1.0 - 2014-04-28
 * Copyright (c) 2014 Roland Zsámboki; Licensed MIT */
 (function($) {
 	var lastResult = null;
@@ -155,6 +155,73 @@ bshot.resources.ImageManager.prototype.checkIfDone = function(callback)
 };
 
 bshot.resources.ImageManager = new bshot.resources.ImageManager();
+bshot.resources.FontManager = function()
+{
+	
+};
+
+bshot.resources.FontManager.prototype = new bshot.resources.ResourceManager();
+
+bshot.resources.FontManager.prototype.get = function(fontFamily, fontSize)
+{
+	return this.resources[this.getKey(fontFamily, fontSize)];
+};
+
+bshot.resources.FontManager.prototype.getKey = function(fontFamily, fontSize)
+{
+	var key = fontFamily + "|" + fontSize;
+	return key.toLowerCase();
+};
+
+bshot.resources.FontManager.prototype.set = function(fontFamily, fontSize, value)
+{
+	this.resources[this.getKey(fontFamily, fontSize)] = value;
+};
+
+bshot.resources.FontManager.prototype.measureTextHeight = function(fontFamily, fontSize)
+{
+	var value = this.get(fontFamily, fontSize);
+	if (!value)
+	{
+		var span = jQuery(document.createElement("div"));
+		span
+			.css("position", "absolute").css("top", "-9999px")
+			.css("margin", "0px").css("padding", "0px").css("border", "0px").css("outline", "0px")
+			.css("line-height", "normal").css("font-family", fontFamily).css("font-size", fontSize).css("font-weight", "normal").css("font-style", "normal")
+			.attr("id", "bshotFontMeasurement")
+			.html("&nbsp;");
+		jQuery("body").append(span);
+		value = span.height();
+		this.set(fontFamily, fontSize, value);
+		span.remove();
+	}
+
+	return value;
+};
+
+bshot.resources.FontManager = new bshot.resources.FontManager();
+bshot.utils.fontMeasurement = {
+
+	ctx: null,
+
+	createContext: function()
+	{
+		var canvas = document.createElement("canvas");
+		this.ctx = canvas.getContext('2d');
+	},
+
+	measureText: function(style, text)
+	{
+		if (!this.ctx)
+		{
+			this.createContext();
+		}
+		this.ctx.font = style.fontStyle + " " + style.fontVariant + " " + style.fontWeight + " " + style.fontSize + " " + style.fontFamily;
+		return this.ctx.measureText(text).width;
+	}
+
+};
+
 bshot.utils.getStyles = function(e, isRoot)
 {
 	isRoot = !!isRoot;
@@ -172,7 +239,6 @@ bshot.utils.getStyles = function(e, isRoot)
 bshot.utils.isBlock = function(e)
 {
 	var style = this.getStyles(e);
-	console.log(style.display);
 	return (style.display === "block" || style.display === "list-item" || style.display === "table");
 };
 
@@ -207,11 +273,11 @@ bshot.utils.renderBackground = function(rtNode, ctx)
 	// Ez a négy érték tartalmazza a bordert is, ezért ezeket kivonjuk belőlük
 	if (!isRoot)
 	{
-		var blw = parseInt(style.borderLeftWidth, 10);
-		var btw = parseInt(style.borderTopWidth, 10);
-		w -= blw + parseInt(style.borderRightWidth, 10);
+		var blw = rtNode.borderWidth[3];//parseInt(style.borderLeftWidth, 10);
+		var btw = rtNode.borderWidth[0];//parseInt(style.borderTopWidth, 10);
+		w -= blw + rtNode.borderWidth[1];//parseInt(style.borderRightWidth, 10);
 		left += blw;
-		h -= btw + parseInt(style.borderBottomWidth, 10);
+		h -= btw + rtNode.borderWidth[2];//parseInt(style.borderBottomWidth, 10);
 		top += btw;
 	}
 	// 1. A háttérszín
@@ -247,7 +313,7 @@ bshot.utils.renderBackground = function(rtNode, ctx)
 				}
 				else
 				{
-					var cb = rtNode.getContainingBlock().renderObject;
+					var cb = rtNode;//.getContainingBlock().renderObject;
 					var selector = (i === 0) ? "width" : "height";
 					realPos[i] = Math.abs(img[selector] - cb[selector]);
 					realPos[i] = -1 * Math.round(realPos[i] * (bgPos[i] / 100));
@@ -266,20 +332,20 @@ bshot.utils.renderBackground = function(rtNode, ctx)
 	}
 	// 3. A border
 	this.renderBorder(rtNode, ctx, "top", w, h, 0, 0,
-		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? parseInt(style.borderLeftWidth, 10) : 0,
-		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? parseInt(style.borderRightWidth, 10) : 0
+		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? rtNode.borderWidth[3] : 0, // borderLeftWidth
+		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? rtNode.borderWidth[1] : 0 // borderRightWidth
 	);
 	this.renderBorder(rtNode, ctx, "right", w, h, 0, 0,
-		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? parseInt(style.borderTopWidth, 10) : 0,
-		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? parseInt(style.borderBottomWidth, 10) : 0
+		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? rtNode.borderWidth[0] : 0, // borderTopWidth
+		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? rtNode.borderWidth[2] : 0 // borderBottomWidth
 	);
 	this.renderBorder(rtNode, ctx, "bottom", w, h, 0, 0,
-		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? parseInt(style.borderLeftWidth, 10) : 0,
-		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? parseInt(style.borderRightWidth, 10) : 0
+		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? rtNode.borderWidth[3] : 0, // borderLeftWidth
+		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? rtNode.borderWidth[1] : 0 // borderRightWidth
 	);
 	this.renderBorder(rtNode, ctx, "left", w, h, 0, 0,
-		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? parseInt(style.borderTopWidth, 10) : 0,
-		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? parseInt(style.borderBottomWidth, 10) : 0
+		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? rtNode.borderWidth[0] : 0, // borderTopWidth
+		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? rtNode.borderWidth[2] : 0 // borderBottomWidth
 	);
 	
 	ctx.restore();
@@ -392,12 +458,17 @@ bshot.model.rendertree.RenderObject = function()
 	this.containingBlock = null;
 	this.isRoot = false;
 	// The position and dimensions of this render object
-	this.xPos = null;
-	this.yPos = null;
-	this.nextX = null;
-	this.nextY = null;
-	this.width = null;
-	this.height = null;
+	this.xPos = 0;
+	this.yPos = 0;
+	this.nextX = 0;
+	this.nextY = 0;
+	this.width = 0;
+	this.height = 0;
+	this.marginWidth = [];
+	this.borderWidth = [];
+	this.paddingWidth = [];
+	this.contentWidth = 0;
+	this.contentHeight = 0;
 	//this.effectiveWidth = null;
 	//this.effectiveHeight = null;
 	// This is for debug purposes only
@@ -413,8 +484,9 @@ bshot.model.rendertree.RenderObject.prototype.layout = function(x, y, containing
 	var height = 0;
 	for (var i = 0; i < this.rtNode.childNodes.length; i++)
 	{
-		height = Math.max(height, this.rtNode.childNodes[i].renderObject.layout(this.nextX, this.nextY, this));
+		height = Math.max(height, this.rtNode.childNodes[i].renderObject.layout(this.nextX, this.nextY, this.isInlineFlow() ? containingBlock : this));
 	}
+	this.beforeDetermineHeightHook();
 	// Determining final height
 	this.height = this.determineHeight(height);
 	//console.log(this.tagName + "#" + this.rtNode.id + ": " + "(" + this.xPos + ";" + this.yPos + ") - " + this.width + " x " + this.height);
@@ -424,6 +496,7 @@ bshot.model.rendertree.RenderObject.prototype.layout = function(x, y, containing
 bshot.model.rendertree.RenderObject.prototype.determinePosition = function(x, y, containingBlock){ x = null; y = null; containingBlock = null; };
 bshot.model.rendertree.RenderObject.prototype.determineWidth = function(){};
 bshot.model.rendertree.RenderObject.prototype.determineHeight = function(height){ height = null; };
+bshot.model.rendertree.RenderObject.prototype.beforeDetermineHeightHook = function(){};
 
 bshot.model.rendertree.RenderObject.prototype.paint = function(ctx)
 {
@@ -476,6 +549,8 @@ bshot.model.rendertree.RenderBox = function(node)
 	this.continuation = null;
 	this.isInlineContinuation = false;
 	this.tagName = "RenderBox";
+	this.currentLineBox = null;
+	this.lineBoxes = null;
 	if (node)
 	{
 		this.setNode(node);
@@ -493,13 +568,14 @@ bshot.model.rendertree.RenderBox.prototype.computeCSSValues = function()
 	var flt = this.renderingStyle.float;
 	if (this.isPositioned())
 	{
-		this.renderingStyle.float = "none";
+		flt = "none";
 		this.renderingStyle.float = this._calcCSSDisplayValue(flt);
 	}
 	else if (flt !== "none" || this.isRoot)
 	{
 		this.renderingStyle.float = this._calcCSSDisplayValue(flt);
 	}
+	this._calcContentBoxData();
 };
 
 bshot.model.rendertree.RenderBox.prototype._calcCSSDisplayValue = function(currentValue)
@@ -521,6 +597,23 @@ bshot.model.rendertree.RenderBox.prototype._calcCSSDisplayValue = function(curre
 		return "block";
 	}
 	return currentValue;
+};
+
+bshot.model.rendertree.RenderBox.prototype._calcContentBoxData = function()
+{
+	// Compute available contentbox data
+	this.marginWidth = [
+		parseInt(this.renderingStyle.marginTop, 10), parseInt(this.renderingStyle.marginRight, 10),
+		parseInt(this.renderingStyle.marginBottom, 10), parseInt(this.renderingStyle.marginLeft, 10),
+	];
+	this.borderWidth = [
+		parseInt(this.renderingStyle.borderTopWidth, 10), parseInt(this.renderingStyle.borderRightWidth, 10),
+		parseInt(this.renderingStyle.borderBottomWidth, 10), parseInt(this.renderingStyle.borderLeftWidth, 10),
+	];
+	this.paddingWidth = [
+		parseInt(this.renderingStyle.paddingTop, 10), parseInt(this.renderingStyle.paddingRight, 10),
+		parseInt(this.renderingStyle.paddingBottom, 10), parseInt(this.renderingStyle.paddingLeft, 10),
+	];
 };
 
 bshot.model.rendertree.RenderBox.prototype.isPositioned = function()
@@ -590,6 +683,9 @@ bshot.model.rendertree.RenderBox.prototype.determinePosition = function()
 	{
 		this.xPos = this.node.offset().left;
 		this.yPos = this.node.offset().top;
+		// nextX and nextY will need to incorporate padding and borders too
+		this.nextX = this.xPos + parseInt(this.renderingStyle.borderLeftWidth, 10) + parseInt(this.renderingStyle.paddingLeft, 10);
+		this.nextY = this.yPos + parseInt(this.renderingStyle.borderTopWidth, 10) + parseInt(this.renderingStyle.paddingTop, 10);
 	}
 };
 
@@ -609,6 +705,61 @@ bshot.model.rendertree.RenderBox.prototype.determineHeight = function()
 		return 0;
 	}
 	return this.node.outerHeight();
+};
+
+bshot.model.rendertree.RenderBox.prototype.getLineBox = function()
+{
+	if (this.lineBoxes === null)
+	{
+		this.lineBoxes = [];
+	}
+	if (this.currentLineBox === null)
+	{
+		// If there is no open linebox we create one
+		this.currentLineBox = bshot.Factory.createRenderTreeLineBox(this);
+		this.currentLineBox.renderObject.width = this.contentWidth;
+		this.currentLineBox.renderObject.height = parseInt(this.currentLineBox.renderObject.renderingStyle.lineHeight, 10);
+		this.currentLineBox.renderObject.xPos = this.nextX;
+		this.currentLineBox.renderObject.yPos = this.nextY;
+		this.currentLineBox.renderObject.nextX = this.currentLineBox.renderObject.xPos;
+		this.currentLineBox.renderObject.nextY = this.currentLineBox.renderObject.yPos;
+	}
+	return this.currentLineBox;
+};
+
+bshot.model.rendertree.RenderBox.prototype.closeLineBox = function()
+{
+	if (this.lineBoxes === null)
+	{
+		this.lineBoxes = [];
+	}
+	if (this.currentLineBox === null)
+	{
+		return false;
+	}
+
+	this.nextY += this.currentLineBox.renderObject.height;
+	this.lineBoxes.push(this.currentLineBox);
+	this.currentLineBox = null;
+
+	return true;
+};
+
+bshot.model.rendertree.RenderBox.prototype.beforeDetermineHeightHook = function()
+{
+	// By this point we have all of our lineboxes if any
+	this.closeLineBox();
+	if (this.lineBoxes.length > 0)
+	{
+		// We empty the box and append the lineboxes
+		this.rtNode.innerHTML = "";
+		for (var i = 0; i < this.lineBoxes.length; i++)
+		{
+			this.lineBoxes[i].renderObject.recalculatePositions();
+			this.rtNode.appendChild(this.lineBoxes[i]);
+		}
+		this.lineBoxes = [];
+	}
 };
 /**
  *  This is the root element of the render tree.
@@ -718,24 +869,34 @@ bshot.model.rendertree.nodes.RenderBlock.prototype.doPainting = function(ctx)
 	bshot.utils.renderBackground(this, ctx);
 };
 
-/*bshot.model.rendertree.nodes.RenderBlock.prototype.determinePosition = function(x, y, containingBlock)
+bshot.model.rendertree.nodes.RenderBlock.prototype.determinePosition = function(x, y, containingBlock)
 {
 	// Do we always have a node? Obviously its not the case with anonymous blocks
 	// TODO: fix it, will be needed for replaced elements
 	this.containingBlock = containingBlock;
-	this.x = this.node.offset().left - x;
-	this.y = this.node.offset().top - y;
+	this.xPos = this.node.offset().left;
+	this.yPos = this.node.offset().top;
+	// nextX and nextY will need to incorporate padding and borders too
+	this.nextX = this.xPos + this.borderWidth[3] + this.paddingWidth[3];
+	this.nextY = this.yPos + this.borderWidth[0] + this.paddingWidth[0];
 };
 
+/**
+ * TODO: outerWidth/outerHeight és innerWidth/innerHeight megkülönböztetése. Az inner-ek a content areára vonatkoznak!
+ */
 bshot.model.rendertree.nodes.RenderBlock.prototype.determineWidth = function()
 {
-	return this.node.outerWidth();
+	this.width = this.node.outerWidth();
+	this.contentWidth = this.width - (this.borderWidth[1] + this.borderWidth[3] + this.paddingWidth[1] + this.paddingWidth[3]);
+	return this.width;
 };
 
 bshot.model.rendertree.nodes.RenderBlock.prototype.determineHeight = function()
 {
-	return this.node.outerHeight();
-};*/
+	this.height = this.node.outerHeight();
+	this.contentHeight = this.height - (this.borderWidth[0] + this.borderWidth[2] + this.paddingWidth[0] + this.paddingWidth[2]);
+	return this.height;
+};
 /**
  *  This is the renderer for text.
  */
@@ -753,6 +914,161 @@ bshot.model.rendertree.nodes.RenderText.prototype = new bshot.model.rendertree.n
 bshot.model.rendertree.nodes.RenderText.prototype.setNode = function(node)
 {
 	this.node = node;
+};
+
+bshot.model.rendertree.nodes.RenderText.prototype.pullStyleObject = function()
+{
+	// The renderText always inherits the styleObject of its closest available ancestor
+	var source = this;
+	while (source && !source.renderingStyle)
+	{
+		source = source.rtNode.parentNode.renderObject;
+	}
+	// TODO: We will merge these two values in inline block level elements, but with text elements its enough to copy
+	// over the parent style
+	this.renderingStyle = source.renderingStyle;
+};
+
+/**
+ * Itt a szöveget lineboxokba kell tördelni!
+ * 1. A containingBlockban nyitunk egy új lineboxot. A maximális szélesség a cb szélessége lesz.
+ * 2. Elkezdjük feltölteni, amíg el nem érjük a szélességet.
+ * 3. Ha elétrük és van még, nyitunk egy új boxot. Ha nincs akkor vége.
+ * Az inline dolgokat continuation-ökkel kell áthidalni. Arra kell vigyázni, hogy már lehetnek continuation-ök az előző fázisból!
+ * A linebox magassága szöveg esetén a line-height, ha van benne más tartalom is, akkor azé. A baseline-os aling miatt lehet a linebox
+ * magasabb, mint a tényleges tartalom magassága. Ennek utána kell nézni még.
+ * Ha olyan tartalom van, ami nem fér el egy lineboxban (nagyobb kép, hosszú szöveg szóközök nélkül),
+ * akkor azt belerakjuk egybe és majd az overflow kezeli.
+ */
+bshot.model.rendertree.nodes.RenderText.prototype.determinePosition = function(x, y, containingBlock)
+{
+	this.xPos = x;
+	this.yPos = y;
+	this.containingBlock = containingBlock;
+	// Ezeket később a szöveghossznak megfelelően pontosítani kell
+	this.nextX = x;
+	this.nextY = y;
+	// A text nodeoknak nincs renderingStyle-ja, de a közvetlen parentnek mindig van, és ez vonatkozik a szövegre
+	//bshot.utils.fontMeasurement.measureText(this.rtNode.parentNode.renderObject.renderingStyle, this.node.text());
+};
+
+bshot.model.rendertree.nodes.RenderText.prototype.determineWidth = function()
+{
+	this.pullStyleObject();
+	var text = this.node.get(0).data;
+	if (!text)
+	{
+		return 0;
+	}
+
+	text = text.split(" ");
+
+	var lineBox = this.containingBlock.getLineBox();
+	var lb = lineBox.renderObject;
+	// Belemérjük a szöveget:
+	var splitText = {
+		width: 0,
+		text: ""
+	};
+	var spaceLength = bshot.utils.fontMeasurement.measureText(lb.renderingStyle, " ");
+	var newTextNode;
+	//console.warn(text);
+	for (var i = 0; i < text.length; i++)
+	{
+		var length = 0;
+		if (lb.isEmpty() && !text[i])
+		{
+			// Trim the left end of the linebox
+			continue;
+		}
+		if (text[i])
+		{
+			length = bshot.utils.fontMeasurement.measureText(lb.renderingStyle, text[i]);
+		}
+		if ((lb.nextX - lb.xPos) + splitText.width + length > lb.width)
+		{
+			if (!splitText.text.charAt(splitText.text.length - 1) || splitText.text.charAt(splitText.text.length - 1) === " ")
+			{
+				splitText.text = splitText.text.substr(0, splitText.text.length - 1);
+				splitText.width -= spaceLength;
+			}
+			newTextNode = bshot.Factory.createRenderTreeTextNode(splitText.text);
+			newTextNode.renderObject.renderingStyle = this.renderingStyle;
+			newTextNode.renderObject.xPos = lb.nextX;
+			newTextNode.renderObject.yPos = lb.nextY;
+			newTextNode.renderObject.width = newTextNode.renderObject.contentWidth = splitText.width;
+			newTextNode.renderObject.height = parseInt(lb.renderingStyle.lineHeight, 10);
+			newTextNode.renderObject.contentHeight = bshot.resources.FontManager.measureTextHeight(lb.renderingStyle.fontFamily, lb.renderingStyle.fontSize);
+			lineBox.appendChild(newTextNode);
+			lb.contentWidth += newTextNode.renderObject.width;
+			splitText = {
+				width: 0,
+				text: ""
+			};
+			this.containingBlock.closeLineBox();
+			lineBox = this.containingBlock.getLineBox();
+			lb = lineBox.renderObject;
+		}
+
+		var hasRoomForSpace = (i !== (text.length - 1) && (lb.nextX - lb.xPos) + splitText.width + length + spaceLength <= lb.width);
+		splitText.width += length + (hasRoomForSpace ? spaceLength : 0);
+		splitText.text += text[i] + (hasRoomForSpace ? " " : "");
+	}
+	if (splitText.width > 0)
+	{
+		newTextNode = bshot.Factory.createRenderTreeTextNode(splitText.text);
+		newTextNode.renderObject.renderingStyle = this.renderingStyle;
+		newTextNode.renderObject.xPos = lb.nextX;
+		newTextNode.renderObject.yPos = lb.nextY;
+		newTextNode.renderObject.width = newTextNode.renderObject.contentWidth = splitText.width;
+		newTextNode.renderObject.height = parseInt(lb.renderingStyle.lineHeight, 10);
+		newTextNode.renderObject.contentHeight = bshot.resources.FontManager.measureTextHeight(lb.renderingStyle.fontFamily, lb.renderingStyle.fontSize);
+		lineBox.appendChild(newTextNode);
+		lb.contentWidth += newTextNode.renderObject.width;
+		lb.nextX += splitText.width;
+	}
+
+	return 0;
+};
+
+bshot.model.rendertree.nodes.RenderText.prototype.doPainting = function(ctx)
+{
+	var style = this.renderingStyle;
+	var text = this.node.text();
+	ctx.save();
+	ctx.translate(this.xPos, this.yPos);
+	ctx.font = style.fontStyle + " " + style.fontVariant + " " + style.fontWeight + " " + style.fontSize + " " + style.fontFamily;
+	ctx.textBaseline = "middle";
+	ctx.fillStyle = style.color;
+	
+	/*switch (style.textAlign)
+	{
+		case "center":
+			ctx.textAlign = "center";
+			ctx.fillText(
+				text,
+				(this.rtNode.parentNode.renderObject.xPos - this.xPos + this.rtNode.parentNode.renderObject.width) / 2,
+				this.height / 2
+			);
+			break;
+		case "end":
+		case "right":
+			ctx.textAlign = "right";
+			ctx.fillText(
+				text,
+				this.rtNode.parentNode.renderObject.xPos - this.xPos + this.rtNode.parentNode.renderObject.width,
+				this.height / 2
+			);
+			break;
+		default:
+			ctx.textAlign = "left";
+			ctx.fillText(text, 0, this.height / 2);
+			break;
+	}*/
+	ctx.textAlign = "left";
+	// BUG: Firefox renders the text 1px lower than the calculater halfpoint
+	ctx.fillText(text, 0, this.height / 2);
+	ctx.restore();
 };
 /**
  *  This class represents an anonymous wrapper block. RenderText objects are considered anonymous inline boxes.
@@ -800,10 +1116,10 @@ bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.isInlineFlow = funct
 	return false;
 };
 
-/*bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determinePosition = function(x, y, containingBlock)
+bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determinePosition = function(x, y, containingBlock)
 {
-	this.x = x;
-	this.y = y;
+	this.xPos = this.nextX = x;
+	this.yPos = this.nextY = y;
 	this.containingBlock = containingBlock;
 };
 
@@ -815,7 +1131,7 @@ bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determineWidth = fun
 bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determineHeight = function(height)
 {
 	return height;
-};*/
+};
 /**
  *  A basic renderer for replaced elements. All replaced element renderers have to extend this class.
  */
@@ -830,6 +1146,91 @@ bshot.model.rendertree.nodes.RenderReplaced = function(node)
 };
 
 bshot.model.rendertree.nodes.RenderReplaced.prototype = new bshot.model.rendertree.RenderBox();
+/**
+ * This type represents a single line. Its a box level element that is used for inline and text rendering.
+ */
+bshot.model.rendertree.nodes.RenderLineBox = function(node)
+{
+	this.tagName = "RenderLineBox";
+	if (node)
+	{
+		this.setNode(node);
+	}
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype = new bshot.model.rendertree.RenderBox();
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.isPositioned = function()
+{
+	return false;
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.isRelPositioned = function()
+{
+	return false;
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.isInline = function()
+{
+	return false;
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.isInlineBlockOrInlineTable = function()
+{
+	return false;
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.isInlineFlow = function()
+{
+	return true;
+};
+
+/**
+ * These two methods will never be called, because the line boxes are added during the calculations.
+ */
+bshot.model.rendertree.nodes.RenderLineBox.prototype.determineWidth = function()
+{
+	return this.width;
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.determineHeight = function()
+{
+	return this.height;
+};
+
+bshot.model.rendertree.nodes.RenderLineBox.prototype.isEmpty = function()
+{
+	return (this.rtNode.childNodes.length === 0);
+};
+
+// TODO: This code doesn't care if the document is ltr or rtl. It will probably be added later on.
+bshot.model.rendertree.nodes.RenderLineBox.prototype.recalculatePositions = function()
+{
+	var textAlign = this.renderingStyle.textAlign;
+	var i, translate;
+	if (textAlign === "left" || textAlign === "start" || this.contentWidth > this.width)
+	{
+		// The code calculates the position of the elements in a linebox according to this rule when it first puts them there
+		return null;
+	}
+
+	if (textAlign === "center")
+	{
+		translate = (this.width - this.contentWidth) / 2;
+	}
+
+	if (textAlign === "right" || textAlign === "end")
+	{
+		var rightMost = this.rtNode.childNodes[this.rtNode.childNodes.length - 1].renderObject;
+		translate = this.xPos + this.width - (rightMost.xPos + rightMost.contentWidth);
+	}
+
+	for (i = 0; i < this.rtNode.childNodes.length; i++)
+	{
+		this.rtNode.childNodes[i].renderObject.xPos += translate;
+	}
+	return true;
+};
 /**
  *  This renderer can render an IMG element. It's position is calculated according to the basic box model,
  *  however we have to paint it in a different way.
@@ -857,9 +1258,13 @@ bshot.model.rendertree.nodes.tags.Img.prototype.doPainting = function(ctx)
 	var img = bshot.resources.ImageManager.get(this.node.prop("src"));
 	if (img)
 	{
+		if (w !== img.width || h !== img.height)
+		{
+			ctx.scale(w / img.width, h / img.height);
+		}
 		var pattern = ctx.createPattern(img, "no-repeat");
 		ctx.beginPath();
-		ctx.rect(0, 0, w, h);
+		ctx.rect(0, 0, img.width, img.height);
 		ctx.fillStyle = pattern;
 		ctx.fill();
 	}
@@ -944,6 +1349,32 @@ bshot.Factory = {
 		return result;
 	},
 
+	createRenderTreeLineBox: function(renderParent)
+	{
+		while (renderParent.isAnonymousBlock())
+		{
+			renderParent = renderParent.rtNode.parentNode.renderObject;
+		}
+		var renderObject = new bshot.model.rendertree.nodes.RenderLineBox();
+		var result = document.createElement(renderObject.tagName);
+		renderObject.renderingStyle = jQuery.extend(true, {}, renderParent.renderingStyle);
+		result.id = this.getNextTreeNodeId();
+		result.renderObject = renderObject;
+		renderObject.rtNode = result;
+
+		return result;
+	},
+
+	createRenderTreeTextNode: function(content)
+	{
+		var renderObject = new bshot.model.rendertree.nodes.RenderText(jQuery(document.createTextNode(content)));
+		var result = document.createElement(renderObject.tagName);
+		result.id = this.getNextTreeNodeId();
+		result.renderObject = renderObject;
+		renderObject.rtNode = result;
+		return result;
+	},
+
 	getNextTreeNodeId: function()
 	{
 		return this.nextTreeNodeId++;
@@ -953,6 +1384,7 @@ bshot.Factory = {
 bshot.Generator = function()
 {
 	this.canvas = document.createElement("canvas");
+	this.ctx = null;
 	this.isSupported = true;
 	this.layers = {};
 	this.renderTree = null;
@@ -988,6 +1420,8 @@ bshot.Generator.prototype.generate = function($this)
 	// 3. Layoutot számolunk
 	console.group("-== Doing layout ==-");
 	this.doLayout();
+	console.log(this.renderTree);
+	console.log(bshot.resources.FontManager);
 	console.groupEnd();
 	// 4. Rajzolunk
 	console.group("-== Painting ==-");
@@ -1009,6 +1443,12 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 	{
 		// If this is a text node we collapse it
 		e.data = bshot.utils.collapseWhiteSpaces(e.data);
+		// Sometimes this element is not needed
+		if (e.data === " " && !rtParent.renderObject.isInlineFlow())
+		{
+			this.doBuildRenderTree(e.nextSibling, rtParent);
+			return false;
+		}
 	}
 	var $e = jQuery(e);
 	// We try to create a new render tree node based on our current DOM node:
@@ -1055,10 +1495,11 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 				else
 				{
 					// We iterate the previous siblings and fix them if needed
-					var sibling = rtParent.firstChild;
+					var sibling = rtParent.firstChild, nextSibling;
 					var newAnonymousBlock;
 					while (sibling !== null)
 					{
+						nextSibling = sibling.nextSibling;
 						if (sibling.renderObject.isInline())
 						{
 							if (!newAnonymousBlock)
@@ -1068,7 +1509,7 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 							}
 							newAnonymousBlock.appendChild(sibling);
 						}
-						sibling = sibling.nextSibling;
+						sibling = nextSibling;
 					}
 					if (rtNode.renderObject.isInline())
 					{
@@ -1185,6 +1626,7 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 bshot.Generator.prototype.parseResources = function(rtNode, e, $e)
 {
 	var style = rtNode.renderObject.renderingStyle;
+	bshot.resources.FontManager.measureTextHeight(style.fontFamily, style.fontSize);
 	if (e.nodeType !== 9 && $e.prop("tagName").toLowerCase() === "img" && $e.prop("src"))
 	{
 		if (!bshot.resources.ImageManager.get($e.prop("src")))

@@ -1,3 +1,25 @@
+bshot.utils.fontMeasurement = {
+
+	ctx: null,
+
+	createContext: function()
+	{
+		var canvas = document.createElement("canvas");
+		this.ctx = canvas.getContext('2d');
+	},
+
+	measureText: function(style, text)
+	{
+		if (!this.ctx)
+		{
+			this.createContext();
+		}
+		this.ctx.font = style.fontStyle + " " + style.fontVariant + " " + style.fontWeight + " " + style.fontSize + " " + style.fontFamily;
+		return this.ctx.measureText(text).width;
+	}
+
+};
+
 bshot.utils.getStyles = function(e, isRoot)
 {
 	isRoot = !!isRoot;
@@ -15,7 +37,6 @@ bshot.utils.getStyles = function(e, isRoot)
 bshot.utils.isBlock = function(e)
 {
 	var style = this.getStyles(e);
-	console.log(style.display);
 	return (style.display === "block" || style.display === "list-item" || style.display === "table");
 };
 
@@ -50,11 +71,11 @@ bshot.utils.renderBackground = function(rtNode, ctx)
 	// Ez a négy érték tartalmazza a bordert is, ezért ezeket kivonjuk belőlük
 	if (!isRoot)
 	{
-		var blw = parseInt(style.borderLeftWidth, 10);
-		var btw = parseInt(style.borderTopWidth, 10);
-		w -= blw + parseInt(style.borderRightWidth, 10);
+		var blw = rtNode.borderWidth[3];//parseInt(style.borderLeftWidth, 10);
+		var btw = rtNode.borderWidth[0];//parseInt(style.borderTopWidth, 10);
+		w -= blw + rtNode.borderWidth[1];//parseInt(style.borderRightWidth, 10);
 		left += blw;
-		h -= btw + parseInt(style.borderBottomWidth, 10);
+		h -= btw + rtNode.borderWidth[2];//parseInt(style.borderBottomWidth, 10);
 		top += btw;
 	}
 	// 1. A háttérszín
@@ -90,7 +111,7 @@ bshot.utils.renderBackground = function(rtNode, ctx)
 				}
 				else
 				{
-					var cb = rtNode.getContainingBlock().renderObject;
+					var cb = rtNode;//.getContainingBlock().renderObject;
 					var selector = (i === 0) ? "width" : "height";
 					realPos[i] = Math.abs(img[selector] - cb[selector]);
 					realPos[i] = -1 * Math.round(realPos[i] * (bgPos[i] / 100));
@@ -109,20 +130,20 @@ bshot.utils.renderBackground = function(rtNode, ctx)
 	}
 	// 3. A border
 	this.renderBorder(rtNode, ctx, "top", w, h, 0, 0,
-		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? parseInt(style.borderLeftWidth, 10) : 0,
-		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? parseInt(style.borderRightWidth, 10) : 0
+		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? rtNode.borderWidth[3] : 0, // borderLeftWidth
+		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? rtNode.borderWidth[1] : 0 // borderRightWidth
 	);
 	this.renderBorder(rtNode, ctx, "right", w, h, 0, 0,
-		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? parseInt(style.borderTopWidth, 10) : 0,
-		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? parseInt(style.borderBottomWidth, 10) : 0
+		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? rtNode.borderWidth[0] : 0, // borderTopWidth
+		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? rtNode.borderWidth[2] : 0 // borderBottomWidth
 	);
 	this.renderBorder(rtNode, ctx, "bottom", w, h, 0, 0,
-		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? parseInt(style.borderLeftWidth, 10) : 0,
-		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? parseInt(style.borderRightWidth, 10) : 0
+		(style.borderLeftStyle !== "none" && style.borderLeftStyle !== "hidden") ? rtNode.borderWidth[3] : 0, // borderLeftWidth
+		(style.borderRightStyle !== "none" && style.borderRightStyle !== "hidden") ? rtNode.borderWidth[1] : 0 // borderRightWidth
 	);
 	this.renderBorder(rtNode, ctx, "left", w, h, 0, 0,
-		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? parseInt(style.borderTopWidth, 10) : 0,
-		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? parseInt(style.borderBottomWidth, 10) : 0
+		(style.borderTopStyle !== "none" && style.borderTopStyle !== "hidden") ? rtNode.borderWidth[0] : 0, // borderTopWidth
+		(style.borderBottomStyle !== "none" && style.borderBottomStyle !== "hidden") ? rtNode.borderWidth[2] : 0 // borderBottomWidth
 	);
 	
 	ctx.restore();

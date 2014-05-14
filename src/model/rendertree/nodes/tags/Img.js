@@ -25,9 +25,13 @@ bshot.model.rendertree.nodes.tags.Img.prototype.doPainting = function(ctx)
 	var img = bshot.resources.ImageManager.get(this.node.prop("src"));
 	if (img)
 	{
+		if (w !== img.width || h !== img.height)
+		{
+			ctx.scale(w / img.width, h / img.height);
+		}
 		var pattern = ctx.createPattern(img, "no-repeat");
 		ctx.beginPath();
-		ctx.rect(0, 0, w, h);
+		ctx.rect(0, 0, img.width, img.height);
 		ctx.fillStyle = pattern;
 		ctx.fill();
 	}

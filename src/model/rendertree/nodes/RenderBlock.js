@@ -21,21 +21,28 @@ bshot.model.rendertree.nodes.RenderBlock.prototype.doPainting = function(ctx)
 	bshot.utils.renderBackground(this, ctx);
 };
 
-/*bshot.model.rendertree.nodes.RenderBlock.prototype.determinePosition = function(x, y, containingBlock)
+bshot.model.rendertree.nodes.RenderBlock.prototype.determinePosition = function(x, y, containingBlock)
 {
-	// Do we always have a node? Obviously its not the case with anonymous blocks
-	// TODO: fix it, will be needed for replaced elements
+	// We always have a base DOM element for these nodes
 	this.containingBlock = containingBlock;
-	this.x = this.node.offset().left - x;
-	this.y = this.node.offset().top - y;
+	this.xPos = this.node.offset().left;
+	this.yPos = this.node.offset().top;
+	// nextX and nextY will need to incorporate padding and borders too
+	this.nextX = this.xPos + this.borderWidth[3] + this.paddingWidth[3];
+	this.nextY = this.yPos + this.borderWidth[0] + this.paddingWidth[0];
 };
+
 
 bshot.model.rendertree.nodes.RenderBlock.prototype.determineWidth = function()
 {
-	return this.node.outerWidth();
+	this.width = this.node.outerWidth();
+	this.contentWidth = this.width - (this.borderWidth[1] + this.borderWidth[3] + this.paddingWidth[1] + this.paddingWidth[3]);
+	return this.width;
 };
 
 bshot.model.rendertree.nodes.RenderBlock.prototype.determineHeight = function()
 {
-	return this.node.outerHeight();
-};*/
+	this.height = this.node.outerHeight();
+	this.contentHeight = this.height - (this.borderWidth[0] + this.borderWidth[2] + this.paddingWidth[0] + this.paddingWidth[2]);
+	return this.height;
+};

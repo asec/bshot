@@ -44,10 +44,10 @@ bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.isInlineFlow = funct
 	return false;
 };
 
-/*bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determinePosition = function(x, y, containingBlock)
+bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determinePosition = function(x, y, containingBlock)
 {
-	this.x = x;
-	this.y = y;
+	this.xPos = this.nextX = x;
+	this.yPos = this.nextY = y;
 	this.containingBlock = containingBlock;
 };
 
@@ -59,4 +59,4 @@ bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determineWidth = fun
 bshot.model.rendertree.nodes.RenderAnonymousBlock.prototype.determineHeight = function(height)
 {
 	return height;
-};*/
+};

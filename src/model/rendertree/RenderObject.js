@@ -15,12 +15,17 @@ bshot.model.rendertree.RenderObject = function()
 	this.containingBlock = null;
 	this.isRoot = false;
 	// The position and dimensions of this render object
-	this.xPos = null;
-	this.yPos = null;
-	this.nextX = null;
-	this.nextY = null;
-	this.width = null;
-	this.height = null;
+	this.xPos = 0;
+	this.yPos = 0;
+	this.nextX = 0;
+	this.nextY = 0;
+	this.width = 0;
+	this.height = 0;
+	this.marginWidth = [];
+	this.borderWidth = [];
+	this.paddingWidth = [];
+	this.contentWidth = 0;
+	this.contentHeight = 0;
 	//this.effectiveWidth = null;
 	//this.effectiveHeight = null;
 	// This is for debug purposes only
@@ -36,17 +41,19 @@ bshot.model.rendertree.RenderObject.prototype.layout = function(x, y, containing
 	var height = 0;
 	for (var i = 0; i < this.rtNode.childNodes.length; i++)
 	{
-		height = Math.max(height, this.rtNode.childNodes[i].renderObject.layout(this.nextX, this.nextY, this));
+		height = Math.max(height, this.rtNode.childNodes[i].renderObject.layout(this.nextX, this.nextY, this.isInlineFlow() ? containingBlock : this));
 	}
+	this.beforeDetermineHeightHook();
 	// Determining final height
 	this.height = this.determineHeight(height);
-	//console.log(this.tagName + "#" + this.rtNode.id + ": " + "(" + this.xPos + ";" + this.yPos + ") - " + this.width + " x " + this.height);
+
 	return this.height;
 };
 
 bshot.model.rendertree.RenderObject.prototype.determinePosition = function(x, y, containingBlock){ x = null; y = null; containingBlock = null; };
 bshot.model.rendertree.RenderObject.prototype.determineWidth = function(){};
 bshot.model.rendertree.RenderObject.prototype.determineHeight = function(height){ height = null; };
+bshot.model.rendertree.RenderObject.prototype.beforeDetermineHeightHook = function(){};
 
 bshot.model.rendertree.RenderObject.prototype.paint = function(ctx)
 {

@@ -9,6 +9,8 @@ bshot.model.rendertree.RenderBox = function(node)
 	this.continuation = null;
 	this.isInlineContinuation = false;
 	this.tagName = "RenderBox";
+	this.currentLineBox = null;
+	this.lineBoxes = null;
 	if (node)
 	{
 		this.setNode(node);
@@ -26,13 +28,14 @@ bshot.model.rendertree.RenderBox.prototype.computeCSSValues = function()
 	var flt = this.renderingStyle.float;
 	if (this.isPositioned())
 	{
-		this.renderingStyle.float = "none";
+		flt = "none";
 		this.renderingStyle.float = this._calcCSSDisplayValue(flt);
 	}
 	else if (flt !== "none" || this.isRoot)
 	{
 		this.renderingStyle.float = this._calcCSSDisplayValue(flt);
 	}
+	this._calcContentBoxData();
 };
 
 bshot.model.rendertree.RenderBox.prototype._calcCSSDisplayValue = function(currentValue)
@@ -54,6 +57,23 @@ bshot.model.rendertree.RenderBox.prototype._calcCSSDisplayValue = function(curre
 		return "block";
 	}
 	return currentValue;
+};
+
+bshot.model.rendertree.RenderBox.prototype._calcContentBoxData = function()
+{
+	// Compute available contentbox data
+	this.marginWidth = [
+		parseInt(this.renderingStyle.marginTop, 10), parseInt(this.renderingStyle.marginRight, 10),
+		parseInt(this.renderingStyle.marginBottom, 10), parseInt(this.renderingStyle.marginLeft, 10),
+	];
+	this.borderWidth = [
+		parseInt(this.renderingStyle.borderTopWidth, 10), parseInt(this.renderingStyle.borderRightWidth, 10),
+		parseInt(this.renderingStyle.borderBottomWidth, 10), parseInt(this.renderingStyle.borderLeftWidth, 10),
+	];
+	this.paddingWidth = [
+		parseInt(this.renderingStyle.paddingTop, 10), parseInt(this.renderingStyle.paddingRight, 10),
+		parseInt(this.renderingStyle.paddingBottom, 10), parseInt(this.renderingStyle.paddingLeft, 10),
+	];
 };
 
 bshot.model.rendertree.RenderBox.prototype.isPositioned = function()
@@ -123,6 +143,9 @@ bshot.model.rendertree.RenderBox.prototype.determinePosition = function()
 	{
 		this.xPos = this.node.offset().left;
 		this.yPos = this.node.offset().top;
+		// nextX and nextY will need to incorporate padding and borders too
+		this.nextX = this.xPos + parseInt(this.renderingStyle.borderLeftWidth, 10) + parseInt(this.renderingStyle.paddingLeft, 10);
+		this.nextY = this.yPos + parseInt(this.renderingStyle.borderTopWidth, 10) + parseInt(this.renderingStyle.paddingTop, 10);
 	}
 };
 
@@ -142,4 +165,59 @@ bshot.model.rendertree.RenderBox.prototype.determineHeight = function()
 		return 0;
 	}
 	return this.node.outerHeight();
+};
+
+bshot.model.rendertree.RenderBox.prototype.getLineBox = function()
+{
+	if (this.lineBoxes === null)
+	{
+		this.lineBoxes = [];
+	}
+	if (this.currentLineBox === null)
+	{
+		// If there is no open linebox we create one
+		this.currentLineBox = bshot.Factory.createRenderTreeLineBox(this);
+		this.currentLineBox.renderObject.width = this.contentWidth;
+		this.currentLineBox.renderObject.height = parseInt(this.currentLineBox.renderObject.renderingStyle.lineHeight, 10);
+		this.currentLineBox.renderObject.xPos = this.nextX;
+		this.currentLineBox.renderObject.yPos = this.nextY;
+		this.currentLineBox.renderObject.nextX = this.currentLineBox.renderObject.xPos;
+		this.currentLineBox.renderObject.nextY = this.currentLineBox.renderObject.yPos;
+	}
+	return this.currentLineBox;
+};
+
+bshot.model.rendertree.RenderBox.prototype.closeLineBox = function()
+{
+	if (this.lineBoxes === null)
+	{
+		this.lineBoxes = [];
+	}
+	if (this.currentLineBox === null)
+	{
+		return false;
+	}
+
+	this.nextY += this.currentLineBox.renderObject.height;
+	this.lineBoxes.push(this.currentLineBox);
+	this.currentLineBox = null;
+
+	return true;
+};
+
+bshot.model.rendertree.RenderBox.prototype.beforeDetermineHeightHook = function()
+{
+	// By this point we have all of our lineboxes if any
+	this.closeLineBox();
+	if (this.lineBoxes.length > 0)
+	{
+		// We empty the box and append the lineboxes
+		this.rtNode.innerHTML = "";
+		for (var i = 0; i < this.lineBoxes.length; i++)
+		{
+			this.lineBoxes[i].renderObject.recalculatePositions();
+			this.rtNode.appendChild(this.lineBoxes[i]);
+		}
+		this.lineBoxes = [];
+	}
 };

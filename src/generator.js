@@ -1,6 +1,7 @@
 bshot.Generator = function()
 {
 	this.canvas = document.createElement("canvas");
+	this.ctx = null;
 	this.isSupported = true;
 	this.layers = {};
 	this.renderTree = null;
@@ -36,6 +37,8 @@ bshot.Generator.prototype.generate = function($this)
 	// 3. Layoutot számolunk
 	console.group("-== Doing layout ==-");
 	this.doLayout();
+	console.log(this.renderTree);
+	console.log(bshot.resources.FontManager);
 	console.groupEnd();
 	// 4. Rajzolunk
 	console.group("-== Painting ==-");
@@ -57,6 +60,12 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 	{
 		// If this is a text node we collapse it
 		e.data = bshot.utils.collapseWhiteSpaces(e.data);
+		// Sometimes this element is not needed
+		if (e.data === " " && !rtParent.renderObject.isInlineFlow())
+		{
+			this.doBuildRenderTree(e.nextSibling, rtParent);
+			return false;
+		}
 	}
 	var $e = jQuery(e);
 	// We try to create a new render tree node based on our current DOM node:
@@ -103,10 +112,11 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 				else
 				{
 					// We iterate the previous siblings and fix them if needed
-					var sibling = rtParent.firstChild;
+					var sibling = rtParent.firstChild, nextSibling;
 					var newAnonymousBlock;
 					while (sibling !== null)
 					{
+						nextSibling = sibling.nextSibling;
 						if (sibling.renderObject.isInline())
 						{
 							if (!newAnonymousBlock)
@@ -116,7 +126,7 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 							}
 							newAnonymousBlock.appendChild(sibling);
 						}
-						sibling = sibling.nextSibling;
+						sibling = nextSibling;
 					}
 					if (rtNode.renderObject.isInline())
 					{
@@ -233,6 +243,7 @@ bshot.Generator.prototype.doBuildRenderTree = function(e, rtParent)
 bshot.Generator.prototype.parseResources = function(rtNode, e, $e)
 {
 	var style = rtNode.renderObject.renderingStyle;
+	bshot.resources.FontManager.measureTextHeight(style.fontFamily, style.fontSize);
 	if (e.nodeType !== 9 && $e.prop("tagName").toLowerCase() === "img" && $e.prop("src"))
 	{
 		if (!bshot.resources.ImageManager.get($e.prop("src")))

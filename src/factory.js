@@ -77,6 +77,32 @@ bshot.Factory = {
 		return result;
 	},
 
+	createRenderTreeLineBox: function(renderParent)
+	{
+		while (renderParent.isAnonymousBlock())
+		{
+			renderParent = renderParent.rtNode.parentNode.renderObject;
+		}
+		var renderObject = new bshot.model.rendertree.nodes.RenderLineBox();
+		var result = document.createElement(renderObject.tagName);
+		renderObject.renderingStyle = jQuery.extend(true, {}, renderParent.renderingStyle);
+		result.id = this.getNextTreeNodeId();
+		result.renderObject = renderObject;
+		renderObject.rtNode = result;
+
+		return result;
+	},
+
+	createRenderTreeTextNode: function(content)
+	{
+		var renderObject = new bshot.model.rendertree.nodes.RenderText(jQuery(document.createTextNode(content)));
+		var result = document.createElement(renderObject.tagName);
+		result.id = this.getNextTreeNodeId();
+		result.renderObject = renderObject;
+		renderObject.rtNode = result;
+		return result;
+	},
+
 	getNextTreeNodeId: function()
 	{
 		return this.nextTreeNodeId++;
