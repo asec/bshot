@@ -15,7 +15,7 @@ The current build comes in two flavors. Both of them are `debug`:
 
 Building
 --------
-To build bSbhot you need to install [git](http://git-scm.com/downloads) and [Node.js](http://nodejs.org/download/) first. The recommended IDE for coding is [Sublime Text](http://www.sublimetext.com/2). I included my project file with the project, feel free to use it or create your own.
+To build bShot you need to install [git](http://git-scm.com/downloads) and [Node.js](http://nodejs.org/download/) first. The recommended IDE for coding is [Sublime Text](http://www.sublimetext.com/2). I included my project file with the project, feel free to use it or create your own.
 
 Grab `Grunt` if you dont have it installed already:
 
